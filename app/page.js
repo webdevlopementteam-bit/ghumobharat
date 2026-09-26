@@ -14,6 +14,7 @@ import {
   Menu,
   MessageCircle,
   Play,
+  Quote,
   Route,
   ShieldCheck,
   Sparkles,
@@ -23,6 +24,110 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import DestinationsSection from "./DestinationsSection";
+
+function GoogleIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" {...props}>
+      <path
+        fill="#4285F4"
+        d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.26-2.08 3.56-5.14 3.56-8.82z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96H1.29v3.09C3.26 21.3 7.31 24 12 24z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.27 14.29c-.25-.72-.38-1.49-.38-2.29s.14-1.57.38-2.29V6.62H1.29A11.94 11.94 0 000 12c0 1.94.46 3.77 1.29 5.38l3.98-3.09z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 4.77c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.98 3.09c.95-2.85 3.6-4.94 6.73-4.94z"
+      />
+    </svg>
+  );
+}
+
+function FacebookIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="#1877F2" {...props}>
+      <path d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07C0 18.1 4.39 23.1 10.13 24v-8.44H7.08v-3.49h3.05V9.41c0-3.02 1.79-4.7 4.53-4.7 1.31 0 2.68.24 2.68.24v2.97h-1.51c-1.49 0-1.95.93-1.95 1.89v2.26h3.32l-.53 3.49h-2.79V24C19.61 23.1 24 18.1 24 12.07z" />
+    </svg>
+  );
+}
+
+function InstagramIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" {...props}>
+      <defs>
+        <linearGradient id="igGradient" x1="0%" y1="100%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#FFDC80" />
+          <stop offset="25%" stopColor="#FCAF45" />
+          <stop offset="50%" stopColor="#E1306C" />
+          <stop offset="75%" stopColor="#C13584" />
+          <stop offset="100%" stopColor="#833AB4" />
+        </linearGradient>
+      </defs>
+      <rect x="2" y="2" width="20" height="20" rx="6" fill="url(#igGradient)" />
+      <rect
+        x="6.5"
+        y="6.5"
+        width="11"
+        height="11"
+        rx="3.5"
+        fill="none"
+        stroke="#fff"
+        strokeWidth="1.6"
+      />
+      <circle cx="17.5" cy="6.5" r="1.1" fill="#fff" />
+    </svg>
+  );
+}
+
+const platformMeta = {
+  google: {
+    label: "Google Reviews",
+    Icon: GoogleIcon,
+    ring: "ring-[#4285F4]/25",
+    bar: "from-[#4285F4] via-[#34A853] to-[#FBBC05]",
+  },
+  facebook: {
+    label: "Facebook",
+    Icon: FacebookIcon,
+    ring: "ring-[#1877F2]/25",
+    bar: "from-[#1877F2] to-[#0a58c9]",
+  },
+  instagram: {
+    label: "Instagram",
+    Icon: InstagramIcon,
+    ring: "ring-[#c13584]/25",
+    bar: "from-[#FCAF45] via-[#E1306C] to-[#833AB4]",
+  },
+};
+
+const reviews = [
+  {
+    initials: "R.S.",
+    trip: "Kannauj Fragrance Trail",
+    platform: "google",
+    quote:
+      "A side of India we didn't know existed. Walking through the attar workshops and flower fields felt like stepping into another century — and our guide made every stop feel personal.",
+  },
+  {
+    initials: "A.K.",
+    trip: "Classical Rajasthan",
+    platform: "facebook",
+    quote:
+      "Every fort, every meal, every stop was thought through. Nothing felt rushed or generic — it genuinely felt like travelling with someone who knows India, not a standard tour package.",
+  },
+  {
+    initials: "M.I.",
+    trip: "Srinagar & Ladakh",
+    platform: "instagram",
+    quote:
+      "From the houseboat mornings to the mountain passes, the pacing was perfect. Small details, like timing the drives around the light, made the whole trip feel curated, not just booked.",
+  },
+];
 
 const navLinks = [
   { href: "#experience", label: "Experience", icon: Flower2 },
@@ -1301,48 +1406,81 @@ export default function Home() {
         </div>
       </section>
 
-      {/* TOUR INFO */}
-      <section className="px-6 py-24 md:py-32 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <div className="grid gap-5 md:grid-cols-4">
-            {[
-              {
-                icon: MapPin,
-                title: "Route",
-                value: "Agra → Kannauj",
-              },
-              {
-                icon: Clock3,
-                title: "One-Day Drive",
-                value: "Approx. 2.5 hrs by car",
-              },
-              {
-                icon: CalendarDays,
-                title: "Extended",
-                value: "2 nights / 3 days",
-              },
-              {
-                icon: Users,
-                title: "Style",
-                value: "Private & curated",
-              },
-            ].map((item) => {
-              const Icon = item.icon;
+      {/* REVIEWS */}
+      <section className="relative overflow-hidden bg-[#fdf8ee] px-6 py-24 md:py-32 lg:px-8">
+        <div className="pointer-events-none absolute -left-32 top-10 h-72 w-72 rounded-full bg-[#ef8b19]/10 blur-3xl" />
+        <div className="pointer-events-none absolute -right-32 bottom-10 h-72 w-72 rounded-full bg-[#082f4f]/10 blur-3xl" />
+
+        <div className="relative mx-auto max-w-7xl">
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="eyebrow">Traveller Stories</p>
+            <h2 className="mt-4 font-serif text-3xl leading-tight tracking-tight text-[#082f4f] md:text-4xl lg:text-5xl">
+              Loved by those who{" "}
+              <span className="text-[#ef8b19]">travelled with us.</span>
+            </h2>
+            <p className="mt-5 text-base leading-7 text-[#31516a] md:text-lg">
+              Real feedback from travellers who chose a curated journey
+              over a standard tour package.
+            </p>
+          </div>
+
+          <div className="mt-14 grid items-start gap-8 md:grid-cols-3">
+            {reviews.map((review, index) => {
+              const meta = platformMeta[review.platform];
+              const PlatformIcon = meta.Icon;
 
               return (
                 <div
-                  key={item.title}
-                  className="rounded-[26px] border border-[#082f4f]/10 bg-white p-7 shadow-sm"
+                  key={review.initials}
+                  className={`group relative flex flex-col overflow-hidden rounded-[28px] bg-white p-8 pt-9 shadow-[0_15px_45px_rgba(8,47,79,0.08)] ring-1 ring-[#082f4f]/5 transition-all duration-500 hover:-translate-y-3 hover:shadow-[0_30px_60px_rgba(8,47,79,0.16)] ${
+                    index === 1 ? "md:mt-8" : ""
+                  }`}
                 >
-                  <Icon className="text-[#ef8b19]" size={23} />
+                  {/* Platform accent bar */}
+                  <div
+                    className={`absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r ${meta.bar}`}
+                  />
 
-                  <p className="mt-6 text-xs font-black uppercase tracking-widest text-[#31516a]/60">
-                    {item.title}
+                  {/* Platform badge */}
+                  <div className="absolute right-6 top-6 flex items-center gap-1.5 rounded-full border border-[#082f4f]/8 bg-[#fdf8ee] px-3 py-1.5 shadow-sm">
+                    <PlatformIcon />
+                    <span className="text-[11px] font-bold text-[#082f4f]/70">
+                      {meta.label}
+                    </span>
+                  </div>
+
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#082f4f]/5">
+                    <Quote size={22} className="text-[#ef8b19]" fill="currentColor" />
+                  </div>
+
+                  <div className="mt-5 flex gap-1">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star
+                        key={i}
+                        size={16}
+                        className="fill-[#ef8b19] text-[#ef8b19]"
+                      />
+                    ))}
+                  </div>
+
+                  <p className="mt-4 flex-1 font-serif text-lg italic leading-7 text-[#082f4f]">
+                    &ldquo;{review.quote}&rdquo;
                   </p>
 
-                  <p className="mt-2 font-serif text-2xl text-[#082f4f]">
-                    {item.value}
-                  </p>
+                  <div className="mt-6 flex items-center gap-3 border-t border-[#082f4f]/8 pt-5">
+                    <div
+                      className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#082f4f] text-sm font-bold text-white ring-4 ${meta.ring}`}
+                    >
+                      {review.initials}
+                    </div>
+
+                    <div>
+                      <p className="text-sm font-bold text-[#082f4f]">
+                        Verified Traveller
+                      </p>
+                      <p className="text-xs text-[#31516a]/70">{review.trip}</p>
+                    </div>
+                  </div>
                 </div>
               );
             })}
@@ -1397,43 +1535,74 @@ export default function Home() {
 
       {/* CTA */}
       <section id="book" className="px-6 py-10 md:px-8 md:py-16">
-        <div className="mx-auto max-w-7xl overflow-hidden rounded-[40px] bg-[#ef8b19]">
-          <div className="relative px-7 py-16 md:px-14 md:py-20 lg:px-20">
-            <div className="absolute -right-20 -top-32 h-96 w-96 rounded-full bg-white/10 blur-3xl" />
+        <div className="relative mx-auto max-w-7xl overflow-hidden rounded-[40px] bg-gradient-to-br from-[#0c3a5e] via-[#0a1f38] to-[#050f1e] shadow-[0_35px_80px_rgba(5,15,30,0.35)]">
+          {/* Dot texture */}
+          <div
+            className="pointer-events-none absolute inset-0 opacity-[0.06]"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle at 1px 1px, #ffffff 1px, transparent 0)",
+              backgroundSize: "26px 26px",
+            }}
+          />
 
-            <div className="relative max-w-6xl">
-              <p className="text-xs font-black uppercase tracking-[0.25em] text-white/60">
-                YOUR JOURNEY, PERSONALLY GUIDED
+          {/* Decorative glow + rings */}
+          <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-[#ef8b19]/15 blur-3xl" />
+          <div className="pointer-events-none absolute -left-24 -bottom-24 h-72 w-72 rounded-full bg-[#d8b979]/10 blur-3xl" />
+          <div className="pointer-events-none absolute -right-10 -top-10 hidden h-56 w-56 rounded-full border border-[#d8b979]/20 md:block" />
+          <Flower2
+            size={200}
+            strokeWidth={0.6}
+            className="pointer-events-none absolute -bottom-8 -left-8 hidden text-[#d8b979]/10 md:block"
+          />
+
+          <div className="relative px-7 py-16 text-center md:px-14 md:py-20 lg:px-20">
+            <Sparkles size={22} strokeWidth={1.5} className="mx-auto text-[#d8b979]" />
+
+            <div className="mt-5 flex items-center justify-center gap-4">
+              <span className="h-px w-10 bg-[#d8b979]/50" />
+              <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[#d8b979]">
+                Your Journey, Personally Guided
               </p>
+              <span className="h-px w-10 bg-[#d8b979]/50" />
+            </div>
 
-              <h2 className="mt-5 font-serif text-3xl leading-tight tracking-tight md:text-4xl lg:text-5xl text-white">
-                From Taj to Attar
-              </h2>
+            <h2 className="mx-auto mt-6 max-w-3xl font-serif text-4xl leading-tight tracking-tight text-white md:text-5xl lg:text-[56px]">
+              From Taj to{" "}
+              <span className="bg-gradient-to-r from-[#f3d9a4] via-[#d8b979] to-[#ef8b19] bg-clip-text text-transparent">
+                Attar.
+              </span>
+            </h2>
 
-              <p className="mt-6 max-w-2xl text-lg leading-8 text-white/80">
-                Discover the fragrance, craft and stories of Kannauj with
-                Ghumo Bharat.
-              </p>
+            <div className="mt-6 flex items-center justify-center gap-3">
+              <span className="h-px w-10 bg-[#d8b979]/40" />
+              <Flower2 size={14} className="text-[#d8b979]" />
+              <span className="h-px w-10 bg-[#d8b979]/40" />
+            </div>
 
-              <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-                <a
-                  href="https://wa.me/919999999999"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center justify-center gap-3 rounded-full bg-[#082f4f] px-7 py-4 font-bold text-white transition hover:bg-[#041f35]"
-                >
-                  <MessageCircle size={19} />
-                  Enquire on WhatsApp
-                </a>
+            <p className="mx-auto mt-6 max-w-xl text-lg leading-8 text-white/65">
+              Discover the fragrance, craft and stories of Kannauj with
+              Ghumo Bharat.
+            </p>
 
-                <a
-                  href="mailto:hello@ghumobharat.com"
-                  className="flex items-center justify-center gap-3 rounded-full border border-white/30 bg-white/10 px-7 py-4 font-bold text-white transition hover:bg-white/20"
-                >
-                  Plan My Experience
-                  <ArrowRight size={18} />
-                </a>
-              </div>
+            <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+              <a
+                href="https://wa.me/919999999999"
+                target="_blank"
+                rel="noreferrer"
+                className="flex w-full items-center justify-center gap-3 rounded-full bg-gradient-to-r from-[#f3a349] to-[#d9711a] px-8 py-4 font-bold text-white shadow-[0_15px_35px_rgba(217,113,26,0.35)] transition hover:shadow-[0_20px_45px_rgba(217,113,26,0.45)] sm:w-auto"
+              >
+                <MessageCircle size={19} />
+                Enquire on WhatsApp
+              </a>
+
+              <a
+                href="mailto:hello@ghumobharat.com"
+                className="flex w-full items-center justify-center gap-3 rounded-full border border-[#d8b979]/30 bg-white/5 px-8 py-4 font-bold text-white transition hover:bg-white/10 sm:w-auto"
+              >
+                Plan My Experience
+                <ArrowRight size={18} />
+              </a>
             </div>
           </div>
         </div>
