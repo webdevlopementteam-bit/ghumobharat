@@ -7,12 +7,14 @@ import {
   Check,
   ChevronDown,
   Clock3,
+  Compass,
   Flower2,
+  HandHeart,
   MapPin,
   Menu,
   MessageCircle,
-  Mountain,
-  Package,
+  Play,
+  Route,
   ShieldCheck,
   Sparkles,
   Star,
@@ -20,50 +22,13 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
+import DestinationsSection from "./DestinationsSection";
 
-const highlights = [
-  {
-    icon: Flower2,
-    number: "01",
-    title: "Flower Fields",
-    text: "Witness rose and jasmine harvesting and discover where Kannauj's fragrance story begins.",
-    image: "/flowerfield.jpg",
-  },
-  {
-    icon: Sparkles,
-    number: "02",
-    title: "Traditional Attar",
-    text: "Step inside a traditional perfume unit and discover rose, jasmine and mitti attar.",
-    image: "/traditional attar.jpg",
-  },
-  {
-    icon: Package,
-    number: "03",
-    title: "Perfume Market",
-    text: "Walk through Kannauj's fragrance market and meet the local perfume trade.",
-    image: "/perfume market.jpeg",
-  },
-  {
-    icon: Mountain,
-    number: "04",
-    title: "Living Heritage",
-    text: "Experience local traditions, heritage and the slower rhythm of Kannauj.",
-    image: "/living heritage.avif",
-  },
-  {
-    icon: Users,
-    number: "05",
-    title: "Perfumer Family",
-    text: "On the extended journey, share hi-tea with a local perfumer family.",
-    image: "/perfumerfamily.webp",
-  },
-  {
-    icon: Sparkles,
-    number: "06",
-    title: "Incense Craft",
-    text: "Explore an incense-stick factory during the evening programme.",
-    image: "/insane.webp",
-  },
+const navLinks = [
+  { href: "#experience", label: "Experience", icon: Flower2 },
+  { href: "#destinations", label: "Destinations", icon: MapPin },
+  { href: "#journey", label: "Journey", icon: Route },
+  { href: "#guide", label: "Your Guide", icon: Users },
 ];
 
 const oneDay = [
@@ -231,63 +196,90 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[#f7f3e9] text-[#082f4f] selection:bg-[#ef8b19] selection:text-white">
       {/* NAVBAR */}
-     <header className="w-full bg-[#062f50] px-4 py-4 md:px-8">
-  <nav className="mx-auto flex max-w-7xl items-center justify-between rounded-full border border-white/20 bg-[#062f50] px-5 py-3 shadow-xl">
+     <header className="relative z-20 w-full bg-[#faf6ec] m-0 p-0">
+  <nav className="relative flex w-full items-center justify-between bg-white/95 py-1.5 pl-2 pr-3 shadow-[0_8px_24px_rgba(8,47,79,0.1)] backdrop-blur-sm md:pl-3 md:pr-6">
 
     {/* Logo */}
-    <a href="#" className="flex items-center gap-3">
-      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f4efe3] text-lg font-bold text-[#082f4f]">
-        G
+    <a href="#" className="badge-scallop relative flex shrink-0 items-center gap-2.5 rounded-[18px] bg-[#fffdf7] py-1.5 pl-2.5 pr-4 md:pl-3 md:pr-5">
+      <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full ring-2 ring-[#ef8b19]/30">
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(180deg, #f9c876 0%, #ef8b19 38%, #c9601c 58%, #082f4f 100%)",
+          }}
+        />
+        <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full">
+          <circle cx="50" cy="22" r="6" fill="#fff6e2" opacity="0.9" />
+          <path
+            d="M14 88 L14 64 L20 64 L20 52 L26 52 L26 42 Q26 34 33 34 Q33 24 42 24 L42 20 Q42 15 50 15 Q58 15 58 20 L58 24 Q67 24 67 34 Q74 34 74 42 L74 52 L80 52 L80 64 L86 64 L86 88 Z"
+            fill="#fdf6e8"
+          />
+          <rect x="30" y="70" width="6" height="18" fill="#c9601c" opacity="0.55" />
+          <rect x="64" y="70" width="6" height="18" fill="#c9601c" opacity="0.55" />
+        </svg>
       </div>
 
       <div className="leading-none">
-        <div className="text-sm font-black tracking-[0.18em] text-white">
+        <div className="font-serif text-sm font-bold tracking-[0.04em] text-[#082f4f]">
           GHUMO
         </div>
 
-        <div className="text-[10px] font-bold tracking-[0.25em] text-[#ef8b19]">
+        <div className="font-serif text-sm font-bold tracking-[0.04em] text-[#ef8b19]">
           BHARAT
         </div>
+
+        <svg viewBox="0 0 90 8" className="mt-0.5 h-1.5 w-[60px]">
+          <path d="M0 4 Q22 -2 45 4 T90 4" stroke="#ef8b19" strokeWidth="2.4" fill="none" />
+          <path d="M0 5.5 Q22 -0.5 45 5.5 T90 5.5" stroke="#ffffff" strokeWidth="1.6" fill="none" />
+          <path d="M0 7 Q22 1 45 7 T90 7" stroke="#0a8a4a" strokeWidth="1.6" fill="none" />
+        </svg>
       </div>
     </a>
 
     {/* Desktop Menu */}
-    <div className="hidden items-center gap-8 md:flex">
-      <a
-        href="#experience"
-        className="text-sm font-semibold text-white/70 transition hover:text-white"
-      >
-        Experience
-      </a>
+    <div className="hidden items-center md:flex">
+      {navLinks.map((link, index) => {
+        const Icon = link.icon;
 
-      <a
-        href="#journey"
-        className="text-sm font-semibold text-white/70 transition hover:text-white"
-      >
-        Journey
-      </a>
+        return (
+          <div key={link.href} className="flex items-center">
+            {index !== 0 && <span className="mx-3 h-6 w-px bg-[#082f4f]/10 lg:mx-4" />}
 
-      <a
-        href="#highlights"
-        className="text-sm font-semibold text-white/70 transition hover:text-white"
-      >
-        Highlights
-      </a>
+            <a
+              href={link.href}
+              className="group flex items-center gap-1.5 px-1 text-[#082f4f]"
+            >
+              <Icon
+                size={15}
+                strokeWidth={1.8}
+                className={
+                  index === 0
+                    ? "text-[#ef8b19] transition group-hover:scale-110"
+                    : "text-[#082f4f]/70 transition group-hover:scale-110 group-hover:text-[#ef8b19]"
+                }
+              />
 
-      <a
-        href="#guide"
-        className="text-sm font-semibold text-white/70 transition hover:text-white"
-      >
-        Your Guide
-      </a>
+              <span className="flex items-center gap-0.5 text-sm font-semibold text-[#082f4f]/85 transition group-hover:text-[#082f4f]">
+                {link.label}
+                <ChevronDown size={13} strokeWidth={2} className="text-[#082f4f]/40" />
+              </span>
+            </a>
+          </div>
+        );
+      })}
     </div>
 
     {/* CTA */}
     <a
       href="#book"
-      className="hidden rounded-full bg-[#ef8b19] px-6 py-3 text-sm font-bold text-white shadow-lg transition hover:bg-[#d9780c] md:block"
+      className="hidden items-center gap-2 rounded-full bg-gradient-to-r from-[#f3a349] to-[#d9711a] py-2 pl-2 pr-4 text-sm font-bold text-white shadow-[0_10px_25px_rgba(217,113,26,0.35)] transition hover:shadow-[0_14px_32px_rgba(217,113,26,0.45)] md:flex"
     >
+      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/20">
+        <Compass size={14} strokeWidth={2} />
+      </span>
       Plan Your Journey
+      <ArrowRight size={14} strokeWidth={2.2} />
     </a>
 
     {/* Mobile Menu Toggle */}
@@ -296,38 +288,39 @@ export default function Home() {
       onClick={() => setMenuOpen((open) => !open)}
       aria-label={menuOpen ? "Close menu" : "Open menu"}
       aria-expanded={menuOpen}
-      className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-white md:hidden"
+      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#082f4f]/15 text-[#082f4f] md:hidden"
     >
-      {menuOpen ? <X size={20} /> : <Menu size={20} />}
+      {menuOpen ? <X size={18} /> : <Menu size={18} />}
     </button>
 
   </nav>
 
   {/* Mobile Menu Drawer */}
   {menuOpen && (
-    <div className="mx-auto mt-3 max-w-7xl rounded-3xl border border-white/10 bg-[#062f50] p-4 shadow-2xl md:hidden">
+    <div className="mx-auto mt-3 max-w-7xl rounded-3xl border border-[#082f4f]/10 bg-white p-4 shadow-xl md:hidden">
       <div className="flex flex-col gap-1">
-        {[
-          { href: "#experience", label: "Experience" },
-          { href: "#journey", label: "Journey" },
-          { href: "#highlights", label: "Highlights" },
-          { href: "#guide", label: "Your Guide" },
-        ].map((link) => (
-          <a
-            key={link.href}
-            href={link.href}
-            onClick={() => setMenuOpen(false)}
-            className="rounded-2xl px-4 py-3 text-sm font-semibold text-white/80 transition hover:bg-white/5 hover:text-white"
-          >
-            {link.label}
-          </a>
-        ))}
+        {navLinks.map((link) => {
+          const Icon = link.icon;
+
+          return (
+            <a
+              key={link.href}
+              href={link.href}
+              onClick={() => setMenuOpen(false)}
+              className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-[#082f4f]/80 transition hover:bg-[#082f4f]/5 hover:text-[#082f4f]"
+            >
+              <Icon size={17} strokeWidth={1.8} className="text-[#ef8b19]" />
+              {link.label}
+            </a>
+          );
+        })}
 
         <a
           href="#book"
           onClick={() => setMenuOpen(false)}
-          className="mt-2 rounded-2xl bg-[#ef8b19] px-4 py-3 text-center text-sm font-bold text-white"
+          className="mt-2 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#f3a349] to-[#d9711a] px-4 py-3 text-center text-sm font-bold text-white"
         >
+          <Compass size={16} />
           Plan Your Journey
         </a>
       </div>
@@ -340,7 +333,7 @@ export default function Home() {
   <img
     src="/desktopbanner.webp"
     alt="Ghumo Bharat - Kannauj Fragrance Trail"
-    className="hidden w-full h-auto md:block"
+    className="hidden w-full h-auto md:block "
   />
 
   {/* Mobile Banner */}
@@ -350,6 +343,167 @@ export default function Home() {
     className="block w-full h-auto md:hidden"
   />
 </section>
+
+      {/* DESTINATIONS */}
+      <DestinationsSection />
+
+      {/* ABOUT */}
+      <section id="about" className="relative overflow-hidden bg-[#fdf8ee]">
+        {/* ================= DESKTOP ================= */}
+        <div className="relative mx-auto hidden max-w-[1850px] md:block">
+          <div className="relative w-full" style={{ aspectRatio: "1850 / 850" }}>
+            <img
+              src="/aboutbanner.webp"
+              alt="A traveller looking out over Amber Fort, with the Taj Mahal, a Kerala houseboat, the Thar desert and the Himalayas"
+              className="absolute inset-0 h-full w-full object-cover object-center"
+            />
+
+            {/* Legibility scrim behind the text column */}
+            <div className="absolute inset-y-0 left-0 w-[58%] bg-gradient-to-r from-[#fdf8ee] via-[#fdf8ee]/85 to-transparent" />
+
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full max-w-[44%] pl-[6%] pr-6">
+                <div className="mb-3 flex items-center gap-4">
+                  <Flower2 size={22} strokeWidth={1.6} className="text-[#ef8b19]" />
+                  <span className="text-[11px] font-black uppercase tracking-[0.3em] text-[#ef8b19]">
+                    About Ghumo Bharat
+                  </span>
+                  <span className="h-px flex-1 bg-[#ef8b19]/50" />
+                </div>
+
+                <h2 className="font-serif text-4xl leading-[1.05] tracking-tight lg:text-5xl xl:text-[54px]">
+                  <span className="text-[#082f4f]">Travel deeper</span>
+                  <br />
+                  <span className="bg-gradient-to-r from-[#ef8b19] to-[#b3311c] bg-clip-text text-transparent">
+                    into India.
+                  </span>
+                </h2>
+
+                <div className="my-5 flex items-center gap-3">
+                  <span className="h-px w-10 bg-[#ef8b19]/50" />
+                  <Flower2 size={14} className="text-[#ef8b19]" />
+                  <span className="h-px w-10 bg-[#ef8b19]/50" />
+                </div>
+
+                <p className="max-w-md text-[15px] leading-7 text-[#31516a] xl:text-base xl:leading-8">
+                  Ghumo Bharat designs slow, curated journeys across
+                  India&apos;s heritage, flavours and living traditions —
+                  from the forts of Rajasthan to the backwaters of Kerala.
+                  Every itinerary is personally guided, not mass-produced,
+                  so you experience India the way people who call it home
+                  actually see it.
+                </p>
+
+                <div className="mt-6 flex items-start gap-3.5">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#fdf0dd] shadow-sm">
+                    <HandHeart size={18} strokeWidth={1.7} className="text-[#ef8b19]" />
+                  </div>
+
+                  <div>
+                    <p className="font-serif text-base italic text-[#082f4f]">
+                      Dekho Apna Desh.
+                    </p>
+                    <p className="mt-0.5 text-sm leading-5 text-[#31516a]">
+                      Bano Desh Ka Mehmaan — see your own country, become
+                      India&apos;s guest.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-7 flex flex-wrap items-center gap-6">
+                  <a
+                    href="#destinations"
+                    className="inline-flex items-center gap-2.5 rounded-full bg-[#082f4f] px-6 py-3.5 text-sm font-bold text-white shadow-lg transition hover:bg-[#061f35]"
+                  >
+                    Explore Our Journeys
+                    <ArrowRight size={17} />
+                  </a>
+
+                
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ================= MOBILE ================= */}
+        <div className="relative overflow-hidden md:hidden" style={{ minHeight: "760px" }}>
+          <img
+            src="/mobileaboutbanner.png"
+            alt="Sunrise over the Himalayas, with a waterfall feeding a turquoise river"
+            className="absolute inset-0 h-full w-full object-cover object-top"
+          />
+
+          {/* Legibility scrim — content sits on the photo, with a short clear reveal at the bottom */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(to bottom, #fdf8ee 0%, #fdf8ee 34%, rgba(253,248,238,0.92) 46%, rgba(253,248,238,0.68) 58%, rgba(253,248,238,0.4) 70%, rgba(253,248,238,0.15) 82%, rgba(253,248,238,0) 90%)",
+            }}
+          />
+
+          <div className="relative px-6 pb-8 pt-10">
+            <div className="mb-3 flex items-center gap-3">
+              <Flower2 size={20} strokeWidth={1.6} className="text-[#ef8b19]" />
+              <span className="text-[11px] font-black uppercase tracking-[0.3em] text-[#ef8b19]">
+                About Ghumo Bharat
+              </span>
+            </div>
+
+            <h2 className="font-serif text-4xl leading-[1.05] tracking-tight">
+              <span className="text-[#082f4f]">Travel deeper</span>
+              <br />
+              <span className="bg-gradient-to-r from-[#ef8b19] to-[#b3311c] bg-clip-text text-transparent">
+                into India.
+              </span>
+            </h2>
+
+            <div className="my-5 flex items-center gap-3">
+              <span className="h-px w-10 bg-[#ef8b19]/50" />
+              <Flower2 size={14} className="text-[#ef8b19]" />
+              <span className="h-px w-10 bg-[#ef8b19]/50" />
+            </div>
+
+            <p className="text-base leading-7 text-[#31516a]">
+              Ghumo Bharat designs slow, curated journeys across India&apos;s
+              heritage, flavours and living traditions — from the forts of
+              Rajasthan to the backwaters of Kerala. Every itinerary is
+              personally guided, not mass-produced, so you experience India
+              the way people who call it home actually see it.
+            </p>
+
+            <div className="mt-6 flex items-start gap-3.5">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#fdf0dd] shadow-sm">
+                <HandHeart size={18} strokeWidth={1.7} className="text-[#ef8b19]" />
+              </div>
+
+              <div>
+                <p className="font-serif text-base italic text-[#082f4f]">
+                  Dekho Apna Desh.
+                </p>
+                <p className="mt-0.5 text-sm leading-5 text-[#31516a]">
+                  Bano Desh Ka Mehmaan — see your own country, become
+                  India&apos;s guest.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-7 flex flex-wrap items-center gap-6">
+              <a
+                href="#destinations"
+                className="inline-flex items-center gap-2.5 rounded-full bg-[#082f4f] px-6 py-3.5 text-sm font-bold text-white shadow-lg transition hover:bg-[#061f35]"
+              >
+                Explore Our Journeys
+                <ArrowRight size={17} />
+              </a>
+
+             
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* INTRO */}
     <section
   id="experience"
@@ -369,7 +523,7 @@ export default function Home() {
       </div>
 
       {/* Main Heading */}
-      <h2 className="w-full font-serif text-[46px] leading-[0.98] tracking-[-0.04em] text-[#082f4f] sm:text-[58px] md:text-[68px] lg:text-[74px]">
+      <h2 className="w-full font-serif text-3xl leading-tight tracking-tight md:text-4xl lg:text-5xl text-[#082f4f]">
         A journey you{" "}
         <span className="text-[#ef8b19]">can smell, see &</span> remember.
       </h2>
@@ -532,64 +686,6 @@ export default function Home() {
   </div>
 </section>
 
-      {/* HIGHLIGHTS */}
-      <section id="highlights" className="bg-[#eee8d9] px-6 py-24 md:py-32 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <div className="max-w-2xl">
-            <p className="eyebrow">WHAT YOU WILL EXPERIENCE</p>
-            <h2 className="section-title">
-              Beyond sightseeing.
-              <span className="block text-[#ef8b19]">Into the source.</span>
-            </h2>
-          </div>
-
-          <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {highlights.map((item) => {
-              const Icon = item.icon;
-
-              return (
-                <div
-                  key={item.number}
-                  className="group relative overflow-hidden rounded-[15px] border border-[#082f4f]/10 bg-[#f9f6ef] shadow-sm transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl"
-                >
-                  {/* Image */}
-                  <div className="relative h-64 w-full overflow-hidden">
-                    <img
-                      src={item.image}
-                      alt={item.title}
-                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-                    />
-
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#082f4f]/85 via-[#082f4f]/10 to-transparent" />
-
-                    <span className="absolute right-4 top-4 font-serif text-4xl text-white/25">
-                      {item.number}
-                    </span>
-
-                    <div className="absolute bottom-4 left-4 flex h-11 w-11 items-center justify-center rounded-full bg-[#ef8b19] text-white shadow-lg">
-                      <Icon size={20} strokeWidth={1.8} />
-                    </div>
-                  </div>
-
-                  {/* Content */}
-                  <div className="p-4">
-                    <h3 className="text-xl font-bold text-[#082f4f]">
-                      {item.title}
-                    </h3>
-
-                    <p className="mt-2 text-sm leading-7 text-[#31516a]">
-                      {item.text}
-                    </p>
-
-                    <div className="mt-2 h-px w-0 bg-[#ef8b19] transition-all duration-500 group-hover:w-full" />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
       {/* JOURNEY SELECTOR */}
 <section
   id="journey"
@@ -602,9 +698,9 @@ export default function Home() {
   <div className="relative mx-auto max-w-7xl">
 
     {/* ================= HEADER ================= */}
-    <div className="flex flex-col justify-between gap-8 md:flex-row md:items-end">
+    <div className="flex flex-col gap-8">
 
-      <div className="max-w-2xl">
+      <div>
         <div className="mb-4 flex items-center gap-3">
           <span className="h-px w-10 bg-[#ef8b19]" />
           <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-[#ef8b19]">
@@ -612,11 +708,9 @@ export default function Home() {
           </p>
         </div>
 
-        <h2 className="font-serif text-4xl leading-[1.05] tracking-tight text-[#082f4f] md:text-5xl lg:text-6xl">
-          One destination.
-          <span className="mt-2 block text-[#ef8b19]">
-            Two ways to experience it.
-          </span>
+        <h2 className="font-serif text-3xl leading-tight tracking-tight md:text-4xl lg:text-5xl text-[#082f4f]">
+          One destination.{" "}
+          <span className="text-[#ef8b19]">Two ways to experience it.</span>
         </h2>
       </div>
 
@@ -959,9 +1053,9 @@ export default function Home() {
           </div>
 
           {/* Heading */}
-          <h2 className="mt-6 font-serif text-5xl leading-tight md:text-6xl">
-            The art of
-            <span className="mt-1 block bg-gradient-to-r from-[#f3d9a4] via-[#d8b979] to-[#c9a24d] bg-clip-text text-transparent">
+          <h2 className="mt-6 font-serif text-3xl leading-tight tracking-tight md:text-4xl lg:text-5xl">
+            The art of{" "}
+            <span className="bg-gradient-to-r from-[#f3d9a4] via-[#d8b979] to-[#c9a24d] bg-clip-text text-transparent">
               traditional attar.
             </span>
           </h2>
@@ -1085,7 +1179,7 @@ export default function Home() {
             <div className="p-8 md:p-12 lg:p-16">
               <p className="eyebrow">LOCAL KNOWLEDGE MATTERS</p>
 
-              <h2 className="mt-4 font-serif text-5xl text-[#082f4f]">
+              <h2 className="mt-4 font-serif text-3xl leading-tight tracking-tight md:text-4xl lg:text-5xl text-[#082f4f]">
                 Meet your guide.
               </h2>
 
@@ -1136,9 +1230,9 @@ export default function Home() {
 
               <p className="mt-7 eyebrow">CONFIRMED BEFORE EVERY DEPARTURE</p>
 
-              <h2 className="mt-4 font-serif text-4xl leading-tight text-[#082f4f] md:text-5xl">
-                Every detail,
-                <span className="block text-[#ef8b19]">arranged in advance.</span>
+              <h2 className="mt-4 font-serif text-3xl leading-tight tracking-tight md:text-4xl lg:text-5xl text-[#082f4f]">
+                Every detail,{" "}
+                <span className="text-[#ef8b19]">arranged in advance.</span>
               </h2>
 
               <p className="mt-5 text-sm leading-7 text-[#31516a]">
@@ -1174,11 +1268,9 @@ export default function Home() {
             <div>
               <p className="eyebrow !text-[#ef8b19]">WHO IS THIS FOR?</p>
 
-              <h2 className="mt-5 font-serif text-5xl leading-tight md:text-6xl">
-                Not just tourists.
-                <span className="block text-[#ef8b19]">
-                  Curious travellers.
-                </span>
+              <h2 className="mt-5 font-serif text-3xl leading-tight tracking-tight md:text-4xl lg:text-5xl">
+                Not just tourists.{" "}
+                <span className="text-[#ef8b19]">Curious travellers.</span>
               </h2>
 
               <p className="mt-7 max-w-md leading-7 text-white/60">
@@ -1263,7 +1355,7 @@ export default function Home() {
         <div className="mx-auto max-w-4xl">
           <div className="text-center">
             <p className="eyebrow">GOOD TO KNOW</p>
-            <h2 className="mt-4 font-serif text-5xl text-[#082f4f]">
+            <h2 className="mt-4 font-serif text-3xl leading-tight tracking-tight md:text-4xl lg:text-5xl text-[#082f4f]">
               Before you travel.
             </h2>
           </div>
@@ -1314,9 +1406,8 @@ export default function Home() {
                 YOUR JOURNEY, PERSONALLY GUIDED
               </p>
 
-              <h2 className="mt-5 font-serif text-5xl leading-tight text-white md:text-7xl">
+              <h2 className="mt-5 font-serif text-3xl leading-tight tracking-tight md:text-4xl lg:text-5xl text-white">
                 From Taj to Attar
-                
               </h2>
 
               <p className="mt-6 max-w-2xl text-lg leading-8 text-white/80">
@@ -1419,15 +1510,6 @@ export default function Home() {
           font-weight: 900;
           letter-spacing: 0.24em;
           color: #ef8b19;
-        }
-
-        .section-title {
-          margin-top: 1rem;
-          font-family: Georgia, "Times New Roman", serif;
-          font-size: clamp(3rem, 6vw, 5.2rem);
-          line-height: 0.98;
-          letter-spacing: -0.04em;
-          color: #082f4f;
         }
       `}</style>
     </main>

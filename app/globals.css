@@ -28,3 +28,26 @@ body {
 .font-script {
   font-family: var(--font-script);
 }
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.badge-scallop {
+  --s: 7px;
+  filter: drop-shadow(0 8px 16px rgba(8, 47, 79, 0.18));
+  -webkit-mask:
+    radial-gradient(circle at var(--s) var(--s), transparent calc(var(--s) - 1px), #000 var(--s)) -2px -2px / calc(var(--s) * 2) calc(var(--s) * 2) repeat-x,
+    radial-gradient(circle at var(--s) var(--s), transparent calc(var(--s) - 1px), #000 var(--s)) -2px 100% / calc(var(--s) * 2) calc(var(--s) * 2) repeat-x,
+    linear-gradient(#000, #000) center / 100% calc(100% - var(--s)) no-repeat;
+  mask:
+    radial-gradient(circle at var(--s) var(--s), transparent calc(var(--s) - 1px), #000 var(--s)) -2px -2px / calc(var(--s) * 2) calc(var(--s) * 2) repeat-x,
+    radial-gradient(circle at var(--s) var(--s), transparent calc(var(--s) - 1px), #000 var(--s)) -2px 100% / calc(var(--s) * 2) calc(var(--s) * 2) repeat-x,
+    linear-gradient(#000, #000) center / 100% calc(100% - var(--s)) no-repeat;
+  -webkit-mask-composite: source-over, source-over, source-over;
+  mask-composite: add, add, add;
+}
