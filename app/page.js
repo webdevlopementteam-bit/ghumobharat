@@ -3,10 +3,8 @@
 import {
   ArrowRight,
   CalendarDays,
-  Car,
   Check,
   ChevronDown,
-  Clock3,
   Compass,
   Flower2,
   HandHeart,
@@ -22,7 +20,8 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { animate, motion, useMotionValue, useTransform } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
 import DestinationsSection from "./DestinationsSection";
 
 function GoogleIcon(props) {
@@ -136,73 +135,6 @@ const navLinks = [
   { href: "#guide", label: "Your Guide", icon: Users },
 ];
 
-const oneDay = [
-  {
-    time: "10:00 AM",
-    title: "Depart Agra",
-    text: "Begin the road journey from Agra towards Kannauj.",
-  },
-  {
-    time: "Around Lunch",
-    title: "Arrive in Kannauj",
-    text: "Lunch in Kannauj before beginning the fragrance-focused experience.",
-  },
-  {
-    time: "Post Lunch",
-    title: "Traditional Attar Visit",
-    text: "Visit a traditional perfume unit and discover rose, jasmine and mitti attar.",
-  },
-  {
-    time: "Afternoon",
-    title: "Perfume Market",
-    text: "Explore local perfume vendors and the fragrance trade environment.",
-  },
-  {
-    time: "After Visits",
-    title: "Tea Break",
-    text: "Pause for tea after the factory and market experience.",
-  },
-  {
-    time: "Thereafter",
-    title: "Return to Agra",
-    text: "Depart Kannauj and travel back towards Agra.",
-  },
-];
-
-const extendedDays = [
-  {
-    day: "DAY 01",
-    title: "Arrival, Perfumer Connection & Heritage",
-    items: [
-      "Depart Agra / Lucknow after lunch",
-      "Hotel check-in and settle in",
-      "Hi-tea with a perfumer family",
-      "Evening visit to Gauri Shankar Temple",
-    ],
-  },
-  {
-    day: "DAY 02",
-    title: "From Flower Fields to Attar",
-    items: [
-      "Early morning rose / jasmine flower-field visit",
-      "Breakfast and freshen up",
-      "Traditional attar experience",
-      "Kannauj perfume market",
-      "Incense-stick factory visit",
-      "Dinner at the hotel",
-    ],
-  },
-  {
-    day: "DAY 03",
-    title: "Breakfast & Departure",
-    items: [
-      "Breakfast",
-      "Hotel check-out",
-      "Continue towards Agra or Lucknow",
-    ],
-  },
-];
-
 const attarProcess = [
   {
     step: "01",
@@ -274,9 +206,459 @@ const audiences = [
   },
 ];
 
+const travelModes = [
+  {
+    key: "taxi",
+    side: "left",
+    label: "By Road",
+    image: "/vehicle-taxi.png",
+    title: "Door-to-door comfort",
+    text: "From the moment you land, a private cab is ready — smooth transfers, no waiting, no hassle.",
+  },
+  {
+    key: "train",
+    side: "right",
+    label: "By Rail",
+    image: "/vehicle-train.png",
+    title: "The classic Indian rail",
+    text: "Watch the country roll by from a train window — the way millions of journeys across India begin.",
+  },
+  {
+    key: "houseboat",
+    side: "left",
+    label: "By Water",
+    image: "/vehicle-houseboat.png",
+    title: "Drift through the backwaters",
+    text: "Spend a night aboard a traditional Kerala houseboat, drifting past palm groves and quiet villages.",
+  },
+  {
+    key: "airplane",
+    side: "right",
+    label: "By Air",
+    image: "/vehicle-airplane.png",
+    title: "Wherever you want to go",
+    text: "When distance calls for speed, we get you there by air — so more of your trip is spent exploring, not travelling.",
+  },
+];
+
+// Coordinate space the snake path is authored in. Positions are converted
+// to percentages, so the track scales responsively at any rendered size.
+// Mobile: vertical snake (top to bottom)
+const TRACK_VIEW_W = 260;
+const TRACK_VIEW_H = 680;
+const TRACK_ANCHORS = {
+  taxi: { x: 90, y: 40 },
+  train: { x: 170, y: 250 },
+  houseboat: { x: 90, y: 460 },
+  airplane: { x: 170, y: 660 },
+};
+const TRACK_PATH_D =
+  "M90,40 C90,140 170,150 170,250 C170,350 90,360 90,460 C90,560 170,570 170,660";
+
+// Desktop: horizontal snake (left to right)
+const TRACK_VIEW_W_H = 700;
+const TRACK_VIEW_H_H = 260;
+const TRACK_ANCHORS_H = {
+  taxi: { x: 40, y: 90 },
+  train: { x: 250, y: 170 },
+  houseboat: { x: 460, y: 90 },
+  airplane: { x: 660, y: 170 },
+};
+const TRACK_PATH_D_H =
+  "M40,90 C140,90 150,170 250,170 C350,170 360,90 460,90 C560,90 570,170 660,170";
+
+function JourneyMotionSection() {
+  const pathRefDesktop = useRef(null);
+  const pathRefMobile = useRef(null);
+
+  // Self-playing progress (0 -> 1, looping) — not tied to scroll at all.
+  const progress = useMotionValue(0);
+
+  useEffect(() => {
+    const controls = animate(progress, 1, {
+      duration: 13,
+      ease: "linear",
+      repeat: Infinity,
+      repeatType: "loop",
+    });
+    return () => controls.stop();
+  }, [progress]);
+
+  // 0 -> 1 across the part of the loop used to travel the path; held at 1
+  // afterwards, leaving room for the fly-off at the very end of each cycle.
+  const travelProgress = useTransform(progress, [0, 0.85, 1], [0, 1, 1]);
+
+  // ---- Desktop: follow the horizontal path ----
+  const vehiclePointDesktop = useTransform(travelProgress, (t) => {
+    const path = pathRefDesktop.current;
+    if (!path) return TRACK_ANCHORS_H.taxi;
+    const length = path.getTotalLength();
+    return path.getPointAtLength(t * length);
+  });
+  const vehicleLeftDesktop = useTransform(
+    vehiclePointDesktop,
+    (p) => `${(p.x / TRACK_VIEW_W_H) * 100}%`
+  );
+  const vehicleTopDesktop = useTransform(
+    vehiclePointDesktop,
+    (p) => `${(p.y / TRACK_VIEW_H_H) * 100}%`
+  );
+
+  // ---- Mobile: follow the vertical path ----
+  const vehiclePointMobile = useTransform(travelProgress, (t) => {
+    const path = pathRefMobile.current;
+    if (!path) return TRACK_ANCHORS.taxi;
+    const length = path.getTotalLength();
+    return path.getPointAtLength(t * length);
+  });
+  const vehicleLeftMobile = useTransform(
+    vehiclePointMobile,
+    (p) => `${(p.x / TRACK_VIEW_W) * 100}%`
+  );
+  const vehicleTopMobile = useTransform(
+    vehiclePointMobile,
+    (p) => `${(p.y / TRACK_VIEW_H) * 100}%`
+  );
+
+  // Fly-off, layered on top of the path position via a separate transform.
+  const flyX = useTransform(progress, [0, 0.88, 1], [0, 0, 210]);
+  const flyY = useTransform(progress, [0, 0.88, 1], [0, 0, 150]);
+  const flyRotate = useTransform(progress, [0, 0.88, 1], [0, 0, 22]);
+  const flyScale = useTransform(progress, [0, 0.88, 0.95, 1], [1, 1, 1.1, 0.7]);
+
+  // Progress line reveal (SVG line-draw technique) — desktop and mobile
+  // paths have different lengths, so each gets its own measurement.
+  const [pathLengthDesktop, setPathLengthDesktop] = useState(1600);
+  const [pathLengthMobile, setPathLengthMobile] = useState(1600);
+  useEffect(() => {
+    if (pathRefDesktop.current) {
+      setPathLengthDesktop(pathRefDesktop.current.getTotalLength());
+    }
+    if (pathRefMobile.current) {
+      setPathLengthMobile(pathRefMobile.current.getTotalLength());
+    }
+  }, []);
+  const dashOffsetDesktop = useTransform(
+    progress,
+    [0, 0.85, 1],
+    [pathLengthDesktop, 0, 0]
+  );
+  const dashOffsetMobile = useTransform(
+    progress,
+    [0, 0.85, 1],
+    [pathLengthMobile, 0, 0]
+  );
+
+  // Vehicle image crossfades
+  const taxiOpacity = useTransform(progress, [0, 0.18, 0.22, 1], [1, 1, 0, 0]);
+  const trainOpacity = useTransform(
+    progress,
+    [0, 0.18, 0.22, 0.4, 0.44, 1],
+    [0, 0, 1, 1, 0, 0]
+  );
+  const houseboatOpacity = useTransform(
+    progress,
+    [0, 0.4, 0.44, 0.62, 0.66, 1],
+    [0, 0, 1, 1, 0, 0]
+  );
+  const airplaneOpacity = useTransform(
+    progress,
+    [0, 0.62, 0.66, 0.97, 1],
+    [0, 0, 1, 1, 0.4]
+  );
+  const opacityByKey = {
+    taxi: taxiOpacity,
+    train: trainOpacity,
+    houseboat: houseboatOpacity,
+    airplane: airplaneOpacity,
+  };
+
+  // Text crossfades snap quickly at the midpoint of each image transition
+  // instead of dissolving across it — two overlapping stacked paragraphs
+  // read as garbled text, unlike images which blend fine.
+  const taxiTextOpacity = useTransform(progress, [0, 0.199, 0.201, 1], [1, 1, 0, 0]);
+  const trainTextOpacity = useTransform(
+    progress,
+    [0, 0.199, 0.201, 0.419, 0.421, 1],
+    [0, 0, 1, 1, 0, 0]
+  );
+  const houseboatTextOpacity = useTransform(
+    progress,
+    [0, 0.419, 0.421, 0.639, 0.641, 1],
+    [0, 0, 1, 1, 0, 0]
+  );
+  const airplaneTextOpacity = useTransform(
+    progress,
+    [0, 0.639, 0.641, 1],
+    [0, 0, 1, 1]
+  );
+  const textOpacityByKey = {
+    taxi: taxiTextOpacity,
+    train: trainTextOpacity,
+    houseboat: houseboatTextOpacity,
+    airplane: airplaneTextOpacity,
+  };
+
+  // Milestone highlight thresholds — precomputed at top level (hooks can't
+  // be called inside the render map below).
+  const roadActive = useTransform(progress, [0, 0.04, 0.14, 1], [0, 0, 1, 1]);
+  const railActive = useTransform(progress, [0, 0.26, 0.36, 1], [0, 0, 1, 1]);
+  const waterActive = useTransform(progress, [0, 0.48, 0.58, 1], [0, 0, 1, 1]);
+  const airActive = useTransform(progress, [0, 0.7, 0.8, 1], [0, 0, 1, 1]);
+
+  const roadDotBg = useTransform(roadActive, [0, 1], ["#f7f3e9", "#ef8b19"]);
+  const railDotBg = useTransform(railActive, [0, 1], ["#f7f3e9", "#ef8b19"]);
+  const waterDotBg = useTransform(waterActive, [0, 1], ["#f7f3e9", "#ef8b19"]);
+  const airDotBg = useTransform(airActive, [0, 1], ["#f7f3e9", "#ef8b19"]);
+
+  const roadDotBorder = useTransform(
+    roadActive,
+    [0, 1],
+    ["rgba(8,47,79,0.2)", "#ef8b19"]
+  );
+  const railDotBorder = useTransform(
+    railActive,
+    [0, 1],
+    ["rgba(8,47,79,0.2)", "#ef8b19"]
+  );
+  const waterDotBorder = useTransform(
+    waterActive,
+    [0, 1],
+    ["rgba(8,47,79,0.2)", "#ef8b19"]
+  );
+  const airDotBorder = useTransform(
+    airActive,
+    [0, 1],
+    ["rgba(8,47,79,0.2)", "#ef8b19"]
+  );
+
+  const dotBg = {
+    taxi: roadDotBg,
+    train: railDotBg,
+    houseboat: waterDotBg,
+    airplane: airDotBg,
+  };
+  const dotBorder = {
+    taxi: roadDotBorder,
+    train: railDotBorder,
+    houseboat: waterDotBorder,
+    airplane: airDotBorder,
+  };
+
+  return (
+    <section id="journey" className="relative overflow-hidden bg-[#f7f3e9] px-6 py-24 md:py-32 lg:px-8">
+      <div className="pointer-events-none absolute -left-32 top-20 h-96 w-96 rounded-full bg-[#ef8b19]/5 blur-3xl" />
+      <div className="pointer-events-none absolute -right-32 bottom-20 h-96 w-96 rounded-full bg-[#082f4f]/5 blur-3xl" />
+
+      <div className="relative mx-auto w-full max-w-6xl">
+        <div className="mx-auto max-w-2xl text-center">
+          <div className="mb-4 flex items-center justify-center gap-4">
+            <span className="h-px w-10 bg-[#ef8b19]" />
+            <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-[#ef8b19]">
+              However You Like To Travel
+            </p>
+            <span className="h-px w-10 bg-[#ef8b19]" />
+          </div>
+
+          <h2 className="font-serif text-3xl leading-tight tracking-tight text-[#082f4f] md:text-4xl lg:text-5xl">
+            One journey.{" "}
+            <span className="text-[#ef8b19]">Every mode of travel.</span>
+          </h2>
+        </div>
+
+        {/* ================= DESKTOP: horizontal snake ================= */}
+        <div className="relative mx-auto mt-16 hidden h-[520px] w-full max-w-6xl md:block">
+          {/* Track, vertically centered with room above/below for content */}
+          <div
+            className="absolute inset-x-0 top-1/2 -translate-y-1/2"
+            style={{ height: TRACK_VIEW_H_H }}
+          >
+            <svg
+              viewBox={`0 0 ${TRACK_VIEW_W_H} ${TRACK_VIEW_H_H}`}
+              preserveAspectRatio="none"
+              className="absolute inset-0 h-full w-full overflow-visible"
+            >
+              <path
+                d={TRACK_PATH_D_H}
+                fill="none"
+                stroke="rgba(8,47,79,0.12)"
+                strokeWidth="3"
+                strokeLinecap="round"
+              />
+              <motion.path
+                ref={pathRefDesktop}
+                d={TRACK_PATH_D_H}
+                fill="none"
+                stroke="url(#journeyGradientH)"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeDasharray={pathLengthDesktop}
+                style={{ strokeDashoffset: dashOffsetDesktop }}
+              />
+              <defs>
+                <linearGradient id="journeyGradientH" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#ef8b19" />
+                  <stop offset="100%" stopColor="#082f4f" />
+                </linearGradient>
+              </defs>
+            </svg>
+
+            {travelModes.map((m) => (
+              <div
+                key={m.key}
+                className="absolute -translate-x-1/2 -translate-y-1/2"
+                style={{
+                  left: `${(TRACK_ANCHORS_H[m.key].x / TRACK_VIEW_W_H) * 100}%`,
+                  top: `${(TRACK_ANCHORS_H[m.key].y / TRACK_VIEW_H_H) * 100}%`,
+                }}
+              >
+                <motion.div
+                  className="h-4 w-4 rounded-full border-2 bg-[#f7f3e9]"
+                  style={{ backgroundColor: dotBg[m.key], borderColor: dotBorder[m.key] }}
+                />
+              </div>
+            ))}
+
+            <motion.div
+              style={{ left: vehicleLeftDesktop, top: vehicleTopDesktop }}
+              className="absolute z-10 -translate-x-1/2 -translate-y-1/2"
+            >
+              <motion.div
+                style={{ x: flyX, y: flyY, rotate: flyRotate, scale: flyScale }}
+                className="relative w-[170px] lg:w-[200px]"
+              >
+                <div className="relative aspect-[3/2]">
+                  {travelModes.map((m) => (
+                    <motion.img
+                      key={m.key}
+                      src={m.image}
+                      alt={m.title}
+                      style={{ opacity: opacityByKey[m.key] }}
+                      className="absolute inset-0 h-full w-full object-contain drop-shadow-[0_18px_24px_rgba(8,47,79,0.28)]"
+                    />
+                  ))}
+                </div>
+              </motion.div>
+            </motion.div>
+          </div>
+
+          {/* Content — above the track for "top" stages, below for "bottom" */}
+          {travelModes.map((m) => (
+            <motion.div
+              key={m.key}
+              style={{
+                opacity: textOpacityByKey[m.key],
+                left: `${(TRACK_ANCHORS_H[m.key].x / TRACK_VIEW_W_H) * 100}%`,
+              }}
+              className={`absolute w-60 -translate-x-1/2 text-center ${
+                m.side === "left" ? "top-0" : "bottom-0"
+              }`}
+            >
+              <p className="text-[11px] font-black uppercase tracking-[0.25em] text-[#ef8b19]">
+                {m.label}
+              </p>
+              <h3 className="mt-2 font-serif text-xl text-[#082f4f] lg:text-2xl">
+                {m.title}
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-[#31516a]">{m.text}</p>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* ================= MOBILE: vertical snake ================= */}
+        <div className="mt-10 md:hidden">
+          <div className="relative mx-auto h-[440px] w-[220px]">
+            <svg
+              viewBox={`0 0 ${TRACK_VIEW_W} ${TRACK_VIEW_H}`}
+              preserveAspectRatio="none"
+              className="absolute inset-0 h-full w-full overflow-visible"
+            >
+              <path
+                d={TRACK_PATH_D}
+                fill="none"
+                stroke="rgba(8,47,79,0.12)"
+                strokeWidth="4"
+                strokeLinecap="round"
+              />
+              <motion.path
+                ref={pathRefMobile}
+                d={TRACK_PATH_D}
+                fill="none"
+                stroke="url(#journeyGradientV)"
+                strokeWidth="4"
+                strokeLinecap="round"
+                strokeDasharray={pathLengthMobile}
+                style={{ strokeDashoffset: dashOffsetMobile }}
+              />
+              <defs>
+                <linearGradient id="journeyGradientV" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#ef8b19" />
+                  <stop offset="100%" stopColor="#082f4f" />
+                </linearGradient>
+              </defs>
+            </svg>
+
+            {travelModes.map((m) => (
+              <div
+                key={m.key}
+                className="absolute -translate-x-1/2 -translate-y-1/2"
+                style={{
+                  left: `${(TRACK_ANCHORS[m.key].x / TRACK_VIEW_W) * 100}%`,
+                  top: `${(TRACK_ANCHORS[m.key].y / TRACK_VIEW_H) * 100}%`,
+                }}
+              >
+                <motion.div
+                  className="h-3.5 w-3.5 rounded-full border-2 bg-[#f7f3e9]"
+                  style={{ backgroundColor: dotBg[m.key], borderColor: dotBorder[m.key] }}
+                />
+              </div>
+            ))}
+
+            <motion.div
+              style={{ left: vehicleLeftMobile, top: vehicleTopMobile }}
+              className="absolute z-10 -translate-x-1/2 -translate-y-1/2"
+            >
+              <motion.div
+                style={{ x: flyX, y: flyY, rotate: flyRotate, scale: flyScale }}
+                className="relative w-[140px]"
+              >
+                <div className="relative aspect-[3/2]">
+                  {travelModes.map((m) => (
+                    <motion.img
+                      key={m.key}
+                      src={m.image}
+                      alt={m.title}
+                      style={{ opacity: opacityByKey[m.key] }}
+                      className="absolute inset-0 h-full w-full object-contain drop-shadow-[0_12px_16px_rgba(8,47,79,0.28)]"
+                    />
+                  ))}
+                </div>
+              </motion.div>
+            </motion.div>
+          </div>
+
+          <div className="relative mt-6 h-28 text-center">
+            {travelModes.map((m) => (
+              <motion.div
+                key={m.key}
+                style={{ opacity: textOpacityByKey[m.key] }}
+                className="absolute inset-0"
+              >
+                <p className="text-[11px] font-black uppercase tracking-[0.25em] text-[#ef8b19]">
+                  {m.label}
+                </p>
+                <h3 className="mt-2 font-serif text-xl text-[#082f4f]">{m.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-[#31516a]">{m.text}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
 export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("one-day");
   const [openFaq, setOpenFaq] = useState(null);
 
   const faqs = [
@@ -305,41 +687,12 @@ export default function Home() {
   <nav className="relative flex w-full items-center justify-between bg-white/95 py-1.5 pl-2 pr-3 shadow-[0_8px_24px_rgba(8,47,79,0.1)] backdrop-blur-sm md:pl-3 md:pr-6">
 
     {/* Logo */}
-    <a href="#" className="badge-scallop relative flex shrink-0 items-center gap-2.5 rounded-[18px] bg-[#fffdf7] py-1.5 pl-2.5 pr-4 md:pl-3 md:pr-5">
-      <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full ring-2 ring-[#ef8b19]/30">
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "linear-gradient(180deg, #f9c876 0%, #ef8b19 38%, #c9601c 58%, #082f4f 100%)",
-          }}
-        />
-        <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full">
-          <circle cx="50" cy="22" r="6" fill="#fff6e2" opacity="0.9" />
-          <path
-            d="M14 88 L14 64 L20 64 L20 52 L26 52 L26 42 Q26 34 33 34 Q33 24 42 24 L42 20 Q42 15 50 15 Q58 15 58 20 L58 24 Q67 24 67 34 Q74 34 74 42 L74 52 L80 52 L80 64 L86 64 L86 88 Z"
-            fill="#fdf6e8"
-          />
-          <rect x="30" y="70" width="6" height="18" fill="#c9601c" opacity="0.55" />
-          <rect x="64" y="70" width="6" height="18" fill="#c9601c" opacity="0.55" />
-        </svg>
-      </div>
-
-      <div className="leading-none">
-        <div className="font-serif text-sm font-bold tracking-[0.04em] text-[#082f4f]">
-          GHUMO
-        </div>
-
-        <div className="font-serif text-sm font-bold tracking-[0.04em] text-[#ef8b19]">
-          BHARAT
-        </div>
-
-        <svg viewBox="0 0 90 8" className="mt-0.5 h-1.5 w-[60px]">
-          <path d="M0 4 Q22 -2 45 4 T90 4" stroke="#ef8b19" strokeWidth="2.4" fill="none" />
-          <path d="M0 5.5 Q22 -0.5 45 5.5 T90 5.5" stroke="#ffffff" strokeWidth="1.6" fill="none" />
-          <path d="M0 7 Q22 1 45 7 T90 7" stroke="#0a8a4a" strokeWidth="1.6" fill="none" />
-        </svg>
-      </div>
+    <a href="#" className="relative flex shrink-0 items-center">
+      <img
+        src="/logo.png"
+        alt="Ghumo Bharat"
+        className="h-14 w-auto object-contain md:h-16"
+      />
     </a>
 
     {/* Desktop Menu */}
@@ -791,293 +1144,8 @@ export default function Home() {
   </div>
 </section>
 
-      {/* JOURNEY SELECTOR */}
-<section
-  id="journey"
-  className="relative overflow-hidden bg-[#f7f3e9] px-6 py-24 md:py-32 lg:px-8"
->
-  {/* Subtle background decoration */}
-  <div className="pointer-events-none absolute -left-32 top-40 h-96 w-96 rounded-full bg-[#ef8b19]/5 blur-3xl" />
-  <div className="pointer-events-none absolute -right-32 bottom-20 h-96 w-96 rounded-full bg-[#082f4f]/5 blur-3xl" />
-
-  <div className="relative mx-auto max-w-7xl">
-
-    {/* ================= HEADER ================= */}
-    <div className="flex flex-col gap-8">
-
-      <div>
-        <div className="mb-4 flex items-center gap-3">
-          <span className="h-px w-10 bg-[#ef8b19]" />
-          <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-[#ef8b19]">
-            Choose Your Pace
-          </p>
-        </div>
-
-        <h2 className="font-serif text-3xl leading-tight tracking-tight md:text-4xl lg:text-5xl text-[#082f4f]">
-          One destination.{" "}
-          <span className="text-[#ef8b19]">Two ways to experience it.</span>
-        </h2>
-      </div>
-
-      {/* Premium Tabs */}
-      <div className="inline-flex w-fit rounded-full border border-[#082f4f]/10 bg-white/70 p-1.5 shadow-[0_12px_35px_rgba(8,47,79,0.08)] backdrop-blur">
-        <button
-          onClick={() => setActiveTab("one-day")}
-          className={`flex items-center gap-2 rounded-full px-5 py-3 text-sm font-bold transition-all duration-300 md:px-6 ${
-            activeTab === "one-day"
-              ? "bg-[#082f4f] text-white shadow-[0_8px_20px_rgba(8,47,79,0.22)]"
-              : "text-[#082f4f] hover:bg-[#082f4f]/5"
-          }`}
-        >
-          <span className="text-base">☀</span>
-          1-Day Escape
-        </button>
-
-        <button
-          onClick={() => setActiveTab("extended")}
-          className={`flex items-center gap-2 rounded-full px-5 py-3 text-sm font-bold transition-all duration-300 md:px-6 ${
-            activeTab === "extended"
-              ? "bg-[#082f4f] text-white shadow-[0_8px_20px_rgba(8,47,79,0.22)]"
-              : "text-[#082f4f] hover:bg-[#082f4f]/5"
-          }`}
-        >
-          <span className="text-base">☾</span>
-          2-Night Immersive
-        </button>
-      </div>
-    </div>
-
-    {/* ================= 1 DAY ================= */}
-    {activeTab === "one-day" ? (
-      <div className="mt-14 grid gap-10 lg:grid-cols-[0.82fr_1.18fr] lg:gap-12">
-
-        {/* ================= LEFT DECORATIVE CARD ================= */}
-        <div className="group relative min-h-[620px] overflow-hidden rounded-[38px] bg-gradient-to-br from-[#0c3a5e] via-[#082f4f] to-[#061f35] shadow-[0_25px_70px_rgba(8,47,79,0.18)]">
-
-          {/* Background image */}
-          <img
-            src="/traditional attar.jpg"
-            alt="Traditional attar being prepared in Kannauj"
-            className="absolute inset-0 h-full w-full object-cover object-center opacity-70 transition-transform duration-700 group-hover:scale-105"
-          />
-
-          {/* Colour + legibility overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#061f35] via-[#082f4f]/75 to-[#082f4f]/35" />
-
-          {/* Decorative pattern */}
-          <div
-            className="absolute inset-0 opacity-[0.12]"
-            style={{
-              backgroundImage:
-                "radial-gradient(circle at 1px 1px, #ffffff 1px, transparent 0)",
-              backgroundSize: "22px 22px",
-            }}
-          />
-
-          {/* Decorative rings */}
-          <div className="absolute -right-16 -top-16 h-72 w-72 rounded-full border border-[#ef8b19]/25" />
-          <div className="absolute -right-4 -top-4 h-52 w-52 rounded-full border border-white/10" />
-          <div className="absolute -bottom-24 -left-16 h-80 w-80 rounded-full border border-white/10" />
-
-          {/* Soft highlight */}
-          <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-black/20 to-transparent" />
-
-          {/* Content */}
-          <div className="relative flex min-h-[620px] flex-col justify-end p-8 md:p-10">
-
-            {/* Badge */}
-            <span className="mb-5 w-fit rounded-full bg-[#ef8b19] px-5 py-2.5 text-[11px] font-black uppercase tracking-[0.2em] text-white shadow-lg">
-              01 Day
-            </span>
-
-            {/* Heading */}
-            <h3 className="font-serif text-5xl leading-[0.95] text-white md:text-6xl">
-              Fragrance
-              <br />
-              Escape
-            </h3>
-
-            {/* Decorative line */}
-            <div className="mt-5 flex items-center gap-2">
-              <span className="h-px w-14 bg-[#ef8b19]" />
-              <span className="h-1.5 w-1.5 rounded-full bg-[#ef8b19]" />
-            </div>
-
-            <p className="mt-5 max-w-md text-[15px] leading-7 text-white/75">
-              A compact heritage escape connecting Agra with the living
-              perfume traditions of Kannauj.
-            </p>
-
-            {/* Bottom Meta */}
-            <div className="mt-8 grid grid-cols-2 border-t border-white/20 pt-6">
-
-              <div className="flex items-start gap-3 border-r border-white/15 pr-5">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#ef8b19]/70">
-                  <Car size={18} className="text-[#ef8b19]" />
-                </div>
-
-                <div>
-                  <p className="text-sm font-bold text-white">
-                    By Car
-                  </p>
-                  <p className="mt-1 text-xs text-white/50">
-                    Approx. 2.5 hrs
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 pl-5">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#ef8b19]/70">
-                  <MapPin size={18} className="text-[#ef8b19]" />
-                </div>
-
-                <div>
-                  <p className="text-sm font-bold text-white">
-                    Agra → Kannauj
-                  </p>
-                  <p className="mt-1 text-xs text-white/50">
-                    Return to Agra
-                  </p>
-                </div>
-              </div>
-
-            </div>
-          </div>
-        </div>
-
-        {/* ================= RIGHT TIMELINE ================= */}
-        <div className="relative lg:py-2">
-
-          {/* Timeline vertical line */}
-          <div className="absolute bottom-6 left-[20px] top-6 w-px bg-gradient-to-b from-[#ef8b19]/20 via-[#082f4f]/15 to-[#ef8b19]/20" />
-
-          <div className="space-y-5">
-
-            {oneDay.map((item, index) => (
-              <div
-                key={item.title}
-                className="group relative pl-[52px]"
-              >
-
-                {/* Number */}
-                <div className="absolute left-0 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border-[3px] border-[#f7f3e9] bg-[#ef8b19] text-[10px] font-black text-white shadow-[0_5px_18px_rgba(239,139,25,0.3)] transition-all duration-300 group-hover:scale-110 group-hover:bg-[#082f4f]">
-                  {String(index + 1).padStart(2, "0")}
-                </div>
-
-                {/* Card */}
-                <div className="relative overflow-hidden rounded-[26px] border border-[#082f4f]/8 bg-white px-6 py-6 shadow-[0_8px_30px_rgba(8,47,79,0.07)] transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-[0_18px_45px_rgba(8,47,79,0.12)] md:px-7">
-
-                  {/* Accent */}
-                  <div className="absolute bottom-0 left-0 top-0 w-1 bg-[#ef8b19] opacity-0 transition-opacity group-hover:opacity-100" />
-
-                  <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-
-                    <div className="min-w-0">
-                      <h3 className="text-[17px] font-bold tracking-tight text-[#082f4f] md:text-lg">
-                        {item.title}
-                      </h3>
-
-                      <p className="mt-2 max-w-xl text-sm leading-6 text-[#31516a]">
-                        {item.text}
-                      </p>
-                    </div>
-
-                    <div className="flex shrink-0 items-center gap-2 md:border-l md:border-[#082f4f]/10 md:pl-6">
-                      <Clock3
-                        size={14}
-                        className="text-[#ef8b19]"
-                      />
-
-                      <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#ef8b19]">
-                        {item.time}
-                      </span>
-                    </div>
-
-                  </div>
-                </div>
-              </div>
-            ))}
-
-          </div>
-        </div>
-      </div>
-
-    ) : (
-
-      /* ================= EXTENDED ================= */
-      <div className="mt-14 space-y-5">
-
-        {extendedDays.map((day, index) => (
-          <div
-            key={day.day}
-            className="group overflow-hidden rounded-[30px] border border-[#082f4f]/8 bg-white shadow-[0_8px_30px_rgba(8,47,79,0.06)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_45px_rgba(8,47,79,0.1)]"
-          >
-
-            <div className="grid lg:grid-cols-[220px_1fr]">
-
-              {/* Day */}
-              <div
-                className={`relative flex min-h-[170px] flex-col justify-center overflow-hidden p-7 ${
-                  index === 0
-                    ? "bg-[#ef8b19]"
-                    : "bg-[#082f4f]"
-                }`}
-              >
-
-                {/* Decorative circle */}
-                <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full border border-white/10" />
-                <div className="absolute -bottom-16 -left-10 h-36 w-36 rounded-full border border-white/10" />
-
-                <span className="relative text-[10px] font-black uppercase tracking-[0.25em] text-white/60">
-                  {day.day}
-                </span>
-
-                <h3 className="relative mt-3 font-serif text-3xl text-white">
-                  {index === 0
-                    ? "Arrival"
-                    : index === 1
-                      ? "Discovery"
-                      : "Departure"}
-                </h3>
-              </div>
-
-              {/* Details */}
-              <div className="p-7 md:p-9">
-
-                <h3 className="text-xl font-bold text-[#082f4f] md:text-2xl">
-                  {day.title}
-                </h3>
-
-                <div className="mt-6 grid gap-3 md:grid-cols-2">
-
-                  {day.items.map((item) => (
-                    <div
-                      key={item}
-                      className="group/item flex items-start gap-3 rounded-2xl bg-[#f7f3e9] p-4 transition-colors hover:bg-[#ef8b19]/10"
-                    >
-                      <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white shadow-sm">
-                        <Check
-                          size={15}
-                          className="text-[#ef8b19]"
-                        />
-                      </div>
-
-                      <span className="text-sm leading-6 text-[#31516a]">
-                        {item}
-                      </span>
-                    </div>
-                  ))}
-
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    )}
-
-  </div>
-</section>
+      {/* JOURNEY MOTION */}
+      <JourneyMotionSection />
 
       {/* ATTAR STORY */}
       <section className="relative overflow-hidden bg-gradient-to-b from-[#0a1f38] via-[#081527] to-[#050f1e] px-6 py-24 text-white md:py-32 lg:px-8">
