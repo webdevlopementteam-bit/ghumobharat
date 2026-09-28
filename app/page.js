@@ -209,7 +209,6 @@ const audiences = [
 const travelModes = [
   {
     key: "taxi",
-    side: "left",
     label: "By Road",
     image: "/vehicle-taxi.png",
     title: "Door-to-door comfort",
@@ -217,15 +216,14 @@ const travelModes = [
   },
   {
     key: "train",
-    side: "right",
     label: "By Rail",
-    image: "/vehicle-train.png",
+    image: "/train.png",
+    mobileImage: "/mobile-train.png",
     title: "The classic Indian rail",
     text: "Watch the country roll by from a train window — the way millions of journeys across India begin.",
   },
   {
     key: "houseboat",
-    side: "left",
     label: "By Water",
     image: "/vehicle-houseboat.png",
     title: "Drift through the backwaters",
@@ -233,7 +231,6 @@ const travelModes = [
   },
   {
     key: "airplane",
-    side: "right",
     label: "By Air",
     image: "/vehicle-airplane.png",
     title: "Wherever you want to go",
@@ -243,29 +240,64 @@ const travelModes = [
 
 // Coordinate space the snake path is authored in. Positions are converted
 // to percentages, so the track scales responsively at any rendered size.
+// There is one more dot than travel modes: each mode travels exactly one
+// dot-to-dot segment, and vehicles swap only while parked on a dot.
 // Mobile: vertical snake (top to bottom)
 const TRACK_VIEW_W = 260;
 const TRACK_VIEW_H = 680;
-const TRACK_ANCHORS = {
-  taxi: { x: 90, y: 40 },
-  train: { x: 170, y: 250 },
-  houseboat: { x: 90, y: 460 },
-  airplane: { x: 170, y: 660 },
-};
+const TRACK_DOTS = [
+  { x: 90, y: 40 },
+  { x: 170, y: 195 },
+  { x: 90, y: 350 },
+  { x: 170, y: 505 },
+  { x: 90, y: 660 },
+];
 const TRACK_PATH_D =
-  "M90,40 C90,140 170,150 170,250 C170,350 90,360 90,460 C90,560 170,570 170,660";
+  "M90,40 C90,117.5 170,117.5 170,195 C170,272.5 90,272.5 90,350 C90,427.5 170,427.5 170,505 C170,582.5 90,582.5 90,660";
 
 // Desktop: horizontal snake (left to right)
 const TRACK_VIEW_W_H = 700;
 const TRACK_VIEW_H_H = 260;
-const TRACK_ANCHORS_H = {
-  taxi: { x: 40, y: 90 },
-  train: { x: 250, y: 170 },
-  houseboat: { x: 460, y: 90 },
-  airplane: { x: 660, y: 170 },
-};
+const TRACK_DOTS_H = [
+  { x: 40, y: 90 },
+  { x: 195, y: 170 },
+  { x: 350, y: 90 },
+  { x: 505, y: 170 },
+  { x: 660, y: 90 },
+];
 const TRACK_PATH_D_H =
-  "M40,90 C140,90 150,170 250,170 C350,170 360,90 460,90 C560,90 570,170 660,170";
+  "M40,90 C117.5,90 117.5,170 195,170 C272.5,170 272.5,90 350,90 C427.5,90 427.5,170 505,170 C582.5,170 582.5,90 660,90";
+
+// Loop timeline (fraction of the 0 -> 1 progress cycle). The vehicle rests
+// briefly on each dot (where the swap happens), travels between dots, then
+// flies off after reaching the last dot.
+const DOT_ARRIVALS = [0, 0.21, 0.42, 0.63, 0.84];
+const DOT_HOLD = 0.02;
+
+function TrackDot({ progress, arriveAt, left, top, className }) {
+  const active = useTransform(
+    progress,
+    [0, arriveAt, arriveAt + 0.01, 1],
+    [arriveAt === 0 ? 1 : 0, arriveAt === 0 ? 1 : 0, 1, 1]
+  );
+  const backgroundColor = useTransform(active, [0, 1], ["#f7f3e9", "#ef8b19"]);
+  const borderColor = useTransform(
+    active,
+    [0, 1],
+    ["rgba(8,47,79,0.2)", "#ef8b19"]
+  );
+  return (
+    <div
+      className="absolute -translate-x-1/2 -translate-y-1/2"
+      style={{ left, top }}
+    >
+      <motion.div
+        className={`rounded-full border-2 ${className}`}
+        style={{ backgroundColor, borderColor }}
+      />
+    </div>
+  );
+}
 
 function JourneyMotionSection() {
   const pathRefDesktop = useRef(null);
@@ -284,14 +316,30 @@ function JourneyMotionSection() {
     return () => controls.stop();
   }, [progress]);
 
-  // 0 -> 1 across the part of the loop used to travel the path; held at 1
-  // afterwards, leaving room for the fly-off at the very end of each cycle.
-  const travelProgress = useTransform(progress, [0, 0.85, 1], [0, 1, 1]);
+  // Fraction of the path length covered: moves dot to dot, pausing on each
+  // dot (all segments have equal length, so dot i sits at i/4), and is held
+  // at 1 afterwards, leaving room for the fly-off at the end of each cycle.
+  const segments = DOT_ARRIVALS.length - 1;
+  const travelInput = [0];
+  const travelOutput = [0];
+  DOT_ARRIVALS.forEach((at, i) => {
+    if (i > 0) {
+      travelInput.push(at);
+      travelOutput.push(i / segments);
+    }
+    if (i < segments) {
+      travelInput.push(at + DOT_HOLD);
+      travelOutput.push(i / segments);
+    }
+  });
+  travelInput.push(1);
+  travelOutput.push(1);
+  const travelProgress = useTransform(progress, travelInput, travelOutput);
 
   // ---- Desktop: follow the horizontal path ----
   const vehiclePointDesktop = useTransform(travelProgress, (t) => {
     const path = pathRefDesktop.current;
-    if (!path) return TRACK_ANCHORS_H.taxi;
+    if (!path) return TRACK_DOTS_H[0];
     const length = path.getTotalLength();
     return path.getPointAtLength(t * length);
   });
@@ -307,7 +355,7 @@ function JourneyMotionSection() {
   // ---- Mobile: follow the vertical path ----
   const vehiclePointMobile = useTransform(travelProgress, (t) => {
     const path = pathRefMobile.current;
-    if (!path) return TRACK_ANCHORS.taxi;
+    if (!path) return TRACK_DOTS[0];
     const length = path.getTotalLength();
     return path.getPointAtLength(t * length);
   });
@@ -322,8 +370,8 @@ function JourneyMotionSection() {
 
   // Fly-off, layered on top of the path position via a separate transform.
   const flyX = useTransform(progress, [0, 0.88, 1], [0, 0, 210]);
-  const flyY = useTransform(progress, [0, 0.88, 1], [0, 0, 150]);
-  const flyRotate = useTransform(progress, [0, 0.88, 1], [0, 0, 22]);
+  const flyY = useTransform(progress, [0, 0.88, 1], [0, 0, -150]);
+  const flyRotate = useTransform(progress, [0, 0.88, 1], [0, 0, -22]);
   const flyScale = useTransform(progress, [0, 0.88, 0.95, 1], [1, 1, 1.1, 0.7]);
 
   // Progress line reveal (SVG line-draw technique) — desktop and mobile
@@ -339,31 +387,36 @@ function JourneyMotionSection() {
     }
   }, []);
   const dashOffsetDesktop = useTransform(
-    progress,
-    [0, 0.85, 1],
-    [pathLengthDesktop, 0, 0]
+    travelProgress,
+    [0, 1],
+    [pathLengthDesktop, 0]
   );
   const dashOffsetMobile = useTransform(
-    progress,
-    [0, 0.85, 1],
-    [pathLengthMobile, 0, 0]
+    travelProgress,
+    [0, 1],
+    [pathLengthMobile, 0]
   );
 
-  // Vehicle image crossfades
-  const taxiOpacity = useTransform(progress, [0, 0.18, 0.22, 1], [1, 1, 0, 0]);
+  // Vehicle image crossfades — only while the vehicle is parked on a dot.
+  const [, swap1, swap2, swap3] = DOT_ARRIVALS;
+  const taxiOpacity = useTransform(
+    progress,
+    [0, swap1, swap1 + DOT_HOLD, 1],
+    [1, 1, 0, 0]
+  );
   const trainOpacity = useTransform(
     progress,
-    [0, 0.18, 0.22, 0.4, 0.44, 1],
+    [0, swap1, swap1 + DOT_HOLD, swap2, swap2 + DOT_HOLD, 1],
     [0, 0, 1, 1, 0, 0]
   );
   const houseboatOpacity = useTransform(
     progress,
-    [0, 0.4, 0.44, 0.62, 0.66, 1],
+    [0, swap2, swap2 + DOT_HOLD, swap3, swap3 + DOT_HOLD, 1],
     [0, 0, 1, 1, 0, 0]
   );
   const airplaneOpacity = useTransform(
     progress,
-    [0, 0.62, 0.66, 0.97, 1],
+    [0, swap3, swap3 + DOT_HOLD, 0.97, 1],
     [0, 0, 1, 1, 0.4]
   );
   const opacityByKey = {
@@ -376,20 +429,27 @@ function JourneyMotionSection() {
   // Text crossfades snap quickly at the midpoint of each image transition
   // instead of dissolving across it — two overlapping stacked paragraphs
   // read as garbled text, unlike images which blend fine.
-  const taxiTextOpacity = useTransform(progress, [0, 0.199, 0.201, 1], [1, 1, 0, 0]);
+  const [snap1, snap2, snap3] = [swap1, swap2, swap3].map(
+    (at) => at + DOT_HOLD / 2
+  );
+  const taxiTextOpacity = useTransform(
+    progress,
+    [0, snap1 - 0.001, snap1 + 0.001, 1],
+    [1, 1, 0, 0]
+  );
   const trainTextOpacity = useTransform(
     progress,
-    [0, 0.199, 0.201, 0.419, 0.421, 1],
+    [0, snap1 - 0.001, snap1 + 0.001, snap2 - 0.001, snap2 + 0.001, 1],
     [0, 0, 1, 1, 0, 0]
   );
   const houseboatTextOpacity = useTransform(
     progress,
-    [0, 0.419, 0.421, 0.639, 0.641, 1],
+    [0, snap2 - 0.001, snap2 + 0.001, snap3 - 0.001, snap3 + 0.001, 1],
     [0, 0, 1, 1, 0, 0]
   );
   const airplaneTextOpacity = useTransform(
     progress,
-    [0, 0.639, 0.641, 1],
+    [0, snap3 - 0.001, snap3 + 0.001, 1],
     [0, 0, 1, 1]
   );
   const textOpacityByKey = {
@@ -399,58 +459,12 @@ function JourneyMotionSection() {
     airplane: airplaneTextOpacity,
   };
 
-  // Milestone highlight thresholds — precomputed at top level (hooks can't
-  // be called inside the render map below).
-  const roadActive = useTransform(progress, [0, 0.04, 0.14, 1], [0, 0, 1, 1]);
-  const railActive = useTransform(progress, [0, 0.26, 0.36, 1], [0, 0, 1, 1]);
-  const waterActive = useTransform(progress, [0, 0.48, 0.58, 1], [0, 0, 1, 1]);
-  const airActive = useTransform(progress, [0, 0.7, 0.8, 1], [0, 0, 1, 1]);
-
-  const roadDotBg = useTransform(roadActive, [0, 1], ["#f7f3e9", "#ef8b19"]);
-  const railDotBg = useTransform(railActive, [0, 1], ["#f7f3e9", "#ef8b19"]);
-  const waterDotBg = useTransform(waterActive, [0, 1], ["#f7f3e9", "#ef8b19"]);
-  const airDotBg = useTransform(airActive, [0, 1], ["#f7f3e9", "#ef8b19"]);
-
-  const roadDotBorder = useTransform(
-    roadActive,
-    [0, 1],
-    ["rgba(8,47,79,0.2)", "#ef8b19"]
-  );
-  const railDotBorder = useTransform(
-    railActive,
-    [0, 1],
-    ["rgba(8,47,79,0.2)", "#ef8b19"]
-  );
-  const waterDotBorder = useTransform(
-    waterActive,
-    [0, 1],
-    ["rgba(8,47,79,0.2)", "#ef8b19"]
-  );
-  const airDotBorder = useTransform(
-    airActive,
-    [0, 1],
-    ["rgba(8,47,79,0.2)", "#ef8b19"]
-  );
-
-  const dotBg = {
-    taxi: roadDotBg,
-    train: railDotBg,
-    houseboat: waterDotBg,
-    airplane: airDotBg,
-  };
-  const dotBorder = {
-    taxi: roadDotBorder,
-    train: railDotBorder,
-    houseboat: waterDotBorder,
-    airplane: airDotBorder,
-  };
-
   return (
-    <section id="journey" className="relative overflow-hidden bg-[#f7f3e9] px-6 py-24 md:py-32 lg:px-8">
+    <section id="journey" className="relative overflow-hidden bg-[#f7f3e9] px-6 py-18 md:py-24 md:px-10 lg:px-[120px]">
       <div className="pointer-events-none absolute -left-32 top-20 h-96 w-96 rounded-full bg-[#ef8b19]/5 blur-3xl" />
       <div className="pointer-events-none absolute -right-32 bottom-20 h-96 w-96 rounded-full bg-[#082f4f]/5 blur-3xl" />
 
-      <div className="relative mx-auto w-full max-w-6xl">
+      <div className="relative mx-auto w-full">
         <div className="mx-auto max-w-2xl text-center">
           <div className="mb-4 flex items-center justify-center gap-4">
             <span className="h-px w-10 bg-[#ef8b19]" />
@@ -467,10 +481,10 @@ function JourneyMotionSection() {
         </div>
 
         {/* ================= DESKTOP: horizontal snake ================= */}
-        <div className="relative mx-auto mt-16 hidden h-[520px] w-full max-w-6xl md:block">
-          {/* Track, vertically centered with room above/below for content */}
+        <div className="relative mx-auto mt-16 hidden h-[420px] w-full md:block">
+          {/* Track on top, content in a single row below it */}
           <div
-            className="absolute inset-x-0 top-1/2 -translate-y-1/2"
+            className="absolute inset-x-0 top-0"
             style={{ height: TRACK_VIEW_H_H }}
           >
             <svg
@@ -503,20 +517,15 @@ function JourneyMotionSection() {
               </defs>
             </svg>
 
-            {travelModes.map((m) => (
-              <div
-                key={m.key}
-                className="absolute -translate-x-1/2 -translate-y-1/2"
-                style={{
-                  left: `${(TRACK_ANCHORS_H[m.key].x / TRACK_VIEW_W_H) * 100}%`,
-                  top: `${(TRACK_ANCHORS_H[m.key].y / TRACK_VIEW_H_H) * 100}%`,
-                }}
-              >
-                <motion.div
-                  className="h-4 w-4 rounded-full border-2 bg-[#f7f3e9]"
-                  style={{ backgroundColor: dotBg[m.key], borderColor: dotBorder[m.key] }}
-                />
-              </div>
+            {TRACK_DOTS_H.map((dot, i) => (
+              <TrackDot
+                key={i}
+                progress={progress}
+                arriveAt={DOT_ARRIVALS[i]}
+                left={`${(dot.x / TRACK_VIEW_W_H) * 100}%`}
+                top={`${(dot.y / TRACK_VIEW_H_H) * 100}%`}
+                className="h-4 w-4"
+              />
             ))}
 
             <motion.div
@@ -542,17 +551,18 @@ function JourneyMotionSection() {
             </motion.div>
           </div>
 
-          {/* Content — above the track for "top" stages, below for "bottom" */}
-          {travelModes.map((m) => (
+          {/* Content — always below the track */}
+          {travelModes.map((m, i) => (
             <motion.div
               key={m.key}
               style={{
                 opacity: textOpacityByKey[m.key],
-                left: `${(TRACK_ANCHORS_H[m.key].x / TRACK_VIEW_W_H) * 100}%`,
+                // Centered over the dot-to-dot segment this mode travels
+                left: `${
+                  ((TRACK_DOTS_H[i].x + TRACK_DOTS_H[i + 1].x) / 2 / TRACK_VIEW_W_H) * 100
+                }%`,
               }}
-              className={`absolute w-60 -translate-x-1/2 text-center ${
-                m.side === "left" ? "top-0" : "bottom-0"
-              }`}
+              className="absolute top-[280px] w-60 -translate-x-1/2 text-center"
             >
               <p className="text-[11px] font-black uppercase tracking-[0.25em] text-[#ef8b19]">
                 {m.label}
@@ -598,20 +608,15 @@ function JourneyMotionSection() {
               </defs>
             </svg>
 
-            {travelModes.map((m) => (
-              <div
-                key={m.key}
-                className="absolute -translate-x-1/2 -translate-y-1/2"
-                style={{
-                  left: `${(TRACK_ANCHORS[m.key].x / TRACK_VIEW_W) * 100}%`,
-                  top: `${(TRACK_ANCHORS[m.key].y / TRACK_VIEW_H) * 100}%`,
-                }}
-              >
-                <motion.div
-                  className="h-3.5 w-3.5 rounded-full border-2 bg-[#f7f3e9]"
-                  style={{ backgroundColor: dotBg[m.key], borderColor: dotBorder[m.key] }}
-                />
-              </div>
+            {TRACK_DOTS.map((dot, i) => (
+              <TrackDot
+                key={i}
+                progress={progress}
+                arriveAt={DOT_ARRIVALS[i]}
+                left={`${(dot.x / TRACK_VIEW_W) * 100}%`}
+                top={`${(dot.y / TRACK_VIEW_H) * 100}%`}
+                className="h-3.5 w-3.5"
+              />
             ))}
 
             <motion.div
@@ -626,7 +631,7 @@ function JourneyMotionSection() {
                   {travelModes.map((m) => (
                     <motion.img
                       key={m.key}
-                      src={m.image}
+                      src={m.mobileImage ?? m.image}
                       alt={m.title}
                       style={{ opacity: opacityByKey[m.key] }}
                       className="absolute inset-0 h-full w-full object-contain drop-shadow-[0_12px_16px_rgba(8,47,79,0.28)]"
@@ -720,7 +725,7 @@ export default function Home() {
 
               <span className="flex items-center gap-0.5 text-sm font-semibold text-[#082f4f]/85 transition group-hover:text-[#082f4f]">
                 {link.label}
-                <ChevronDown size={13} strokeWidth={2} className="text-[#082f4f]/40" />
+              
               </span>
             </a>
           </div>
@@ -1318,7 +1323,7 @@ export default function Home() {
       </section>
 
       {/* GUIDE */}
-      <section id="guide" className="px-6 py-24 md:py-32 lg:px-8">
+      <section id="guide" className="px-6 py-18 md:py-24 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="grid overflow-hidden rounded-[40px] bg-[#eee8d9] lg:grid-cols-[0.75fr_1.25fr]">
             <div className="relative flex min-h-[480px] flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-[#0c3a5e] via-[#082f4f] to-[#061f35] p-10">
@@ -1393,7 +1398,7 @@ export default function Home() {
       </section>
 
       {/* PRE-DEPARTURE CONFIRMATION */}
-      <section className="px-6 pb-24 md:px-8 md:pb-32">
+      <section className="px-6 pb-18 md:px-8 md:pb-24">
         <div className="mx-auto max-w-7xl overflow-hidden rounded-[40px] border border-[#082f4f]/10 bg-white shadow-[0_20px_60px_rgba(8,47,79,0.08)]">
           <div className="grid lg:grid-cols-[0.85fr_1.15fr]">
             <div className="flex flex-col justify-center bg-[#eee8d9] p-8 md:p-12 lg:p-14">
@@ -1435,7 +1440,7 @@ export default function Home() {
       </section>
 
       {/* WHO IS IT FOR */}
-      <section className="bg-[#062f50] px-6 py-24 text-white md:py-32 lg:px-8">
+      <section className="bg-[#062f50] px-6 py-18 text-white md:py-20 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="grid gap-14 lg:grid-cols-[0.8fr_1.2fr]">
             <div>
@@ -1475,7 +1480,7 @@ export default function Home() {
       </section>
 
       {/* REVIEWS */}
-      <section className="relative overflow-hidden bg-[#fdf8ee] px-6 py-24 md:py-32 lg:px-8">
+      <section className="relative overflow-hidden bg-[#fdf8ee] px-6 py-18 md:py-20 lg:px-8">
         <div className="pointer-events-none absolute -left-32 top-10 h-72 w-72 rounded-full bg-[#ef8b19]/10 blur-3xl" />
         <div className="pointer-events-none absolute -right-32 bottom-10 h-72 w-72 rounded-full bg-[#082f4f]/10 blur-3xl" />
 
@@ -1557,7 +1562,7 @@ export default function Home() {
       </section>
 
       {/* FAQ */}
-      <section className="bg-[#eee8d9] px-6 py-24 md:py-32 lg:px-8">
+      <section className="bg-[#eee8d9] px-6 py-18 md:py-20 lg:px-8">
         <div className="mx-auto max-w-4xl">
           <div className="text-center">
             <p className="eyebrow">GOOD TO KNOW</p>

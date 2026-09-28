@@ -23,7 +23,7 @@ export default function DestinationsSection() {
   return (
     <section
       id="destinations"
-      className="bg-[#f7f3e9] px-6 py-24 md:py-32 lg:px-8"
+      className="bg-[#f7f3e9] px-6 py-18 md:py-20 lg:px-8"
     >
       <div className="mx-auto max-w-7xl">
         <div className="mx-auto max-w-4xl text-center">
