@@ -23,6 +23,7 @@ import {
 import { animate, motion, useMotionValue, useTransform } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import DestinationsSection from "./DestinationsSection";
+import Link from "next/link";
 
 function GoogleIcon(props) {
   return (
@@ -1696,7 +1697,7 @@ export default function Home() {
           </div>
 
           <div className="text-sm text-white/40">
-            © {new Date().getFullYear()} Ghumo Bharat. All rights reserved.
+            © {new Date().getFullYear()} Ghumo Bharat. All rights reserved | Powered By <Link target="_blank" href="https://www.cybertricksmedia.com/">Cybertricksmedia Pvt Ltd</Link>
           </div>
         </div>
       </footer>

@@ -348,7 +348,7 @@ export default async function DestinationPage({ params }) {
             </p>
           </div>
           <div className="text-sm text-white/40">
-            © {new Date().getFullYear()} Ghumo Bharat. All rights reserved.
+            © {new Date().getFullYear()} Ghumo Bharat. All rights reserved | Powered By <Link target="_blank" href="https://www.cybertricksmedia.com/">Cybertricksmedia Pvt Ltd</Link>
           </div>
         </div>
       </footer>

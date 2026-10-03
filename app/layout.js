@@ -19,6 +19,9 @@ const dancingScript = Dancing_Script({
 export const metadata = {
   title: "ghumo bharat",
   description: "Ghumo bharat is a travel blog that showcases the beauty and diversity of India. It features travel guides, tips, and personal experiences from various destinations across the country.",
+  icons:{
+    icon:"/logo.png"
+  }
 };
 
 export default function RootLayout({ children }) {
